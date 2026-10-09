@@ -423,6 +423,17 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
 function pad2(n){ return String(n).padStart(2,'0'); }
 
+const PROGRESS_KEY = 'mnDownUpSubtractionProgress_v1';
+function saveProgress(){
+  try{ localStorage.setItem(PROGRESS_KEY, JSON.stringify({sub:state.unlockedLevels})); }catch(e){}
+}
+function loadProgress(){
+  try{
+    const d = JSON.parse(localStorage.getItem(PROGRESS_KEY)||'null');
+    if(d && Array.isArray(d.sub)) d.sub.forEach(id=>{ if(UNLOCK_ORDER.includes(id) && !state.unlockedLevels.includes(id)) state.unlockedLevels.push(id); });
+  }catch(e){}
+}
+
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -484,6 +495,7 @@ function devUnlock(e){
 }
 
 function buildHomePage(){
+  saveProgress();
   const grid=document.getElementById('levels-grid');
   grid.innerHTML='';
   LEVELS.forEach((lv,idx)=>{
@@ -729,6 +741,7 @@ function buildScoreBar(){
 }
 
 async function runFlashQuestion(){
+  state._flashBusy=false;
   const [a,b]=state.flashQuestions[state.flashIndex];
   state.flashAttempts=0;
   document.getElementById('flash-counter').textContent='Question '+(state.flashIndex+1)+'/10';
@@ -753,6 +766,7 @@ async function runFlashQuestion(){
 }
 
 function submitFlash(){
+  if(state._flashBusy) return;
   const [a,b]=state.flashQuestions[state.flashIndex];
   const correct=a-b;
   const inp=document.getElementById('flash-input');
@@ -762,6 +776,7 @@ function submitFlash(){
   if(isNaN(val)||inp.value===''){fb.textContent='Please type a number!';fb.className='feedback-msg wrong';return;}
   state.flashAttempts++;
   if(val===correct){
+    state._flashBusy=true;
     state.flashScore++;
     fb.textContent='✅ Correct!'; fb.className='feedback-msg correct';
     document.getElementById('flash-input-area').querySelector('.btn').style.display='none';
@@ -774,6 +789,7 @@ function submitFlash(){
     },1100);
   } else {
     if(state.flashAttempts>=2){
+      state._flashBusy=true;
       fb.textContent='The answer was '+correct; fb.className='feedback-msg reveal';
       markDot(state.flashIndex,false);
       document.getElementById('flash-input-area').style.display='none';
@@ -791,6 +807,7 @@ function markDot(i,correct){
 }
 
 function advanceFlash(){
+  if(!document.getElementById('page-flash').classList.contains('active')) return;
   state.flashIndex++;
   if(state.flashIndex>=10) showCongrats();
   else runFlashQuestion();
@@ -856,11 +873,12 @@ function launchConfetti(){
 // KEYBOARD
 // ══════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
+  const on=el=>!!el && el.style.display!=='none' && el.offsetParent!==null;
   if(e.key==='Enter'){
     const flashArea=document.getElementById('flash-input-area');
-    if(flashArea&&flashArea.style.display!=='none'){ submitFlash(); return; }
+    if(on(flashArea)){ submitFlash(); return; }
     const checkBtn=document.getElementById('check-btn');
-    if(checkBtn&&checkBtn.style.display!=='none'){ checkAnswer(); }
+    if(on(checkBtn)){ checkAnswer(); }
   }
 });
 
@@ -882,6 +900,7 @@ function createStars(){
 // INIT
 // ══════════════════════════════════════════════════════
 function init(){
+  loadProgress();
   createStars();
   buildHomePage();
   updateMuteButtons();
