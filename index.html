@@ -448,7 +448,7 @@ function showToast(msg,dur=2000){
 }
 
 function devUnlock(e){
-  if(!e.shiftKey) return;
+  return; // shortcut removed before sale
   UNLOCK_ORDER.forEach(id=>{ if(!state.unlockedLevels.includes(id)) state.unlockedLevels.push(id); });
   buildHomePage();
   showToast('🔓 All levels unlocked!');
@@ -488,7 +488,7 @@ function updateMuteButtons(){ document.querySelectorAll('[onclick="toggleMute()"
 // HOME PAGE
 // ══════════════════════════════════════════════════════
 function devUnlock(e){
-  if(!e.shiftKey) return;
+  return; // shortcut removed before sale
   UNLOCK_ORDER.forEach(id=>{ if(!state.unlockedLevels.includes(id)) state.unlockedLevels.push(id); });
   buildHomePage();
   showToast('🔓 All levels unlocked!');
